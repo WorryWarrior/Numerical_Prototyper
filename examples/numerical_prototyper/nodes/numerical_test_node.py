@@ -1,9 +1,9 @@
-#from numerical_prototyper.numerical_conf import register_numeric_node, NUM_NODE_TEST
+from numerical_prototyper.numerical_conf import register_numeric_node, NUM_NODE_EVALUATE_FUNCTION
 from numerical_prototyper.nodes.numerical_node_base import NumericalNode
-from numerical_prototyper.numerical_transform_window import TransformWindow
 
-
-#@register_numeric_node(NUM_NODE_TEST)
+"""
+@register_numeric_node(NUM_NODE_TEST)
 class TestNumericalNode(NumericalNode):
-    op_code = 1
+    op_code = NUM_NODE_TEST
     op_title = "Overriden Test"
+"""

@@ -21,7 +21,7 @@ class QDMDragListbox(QListWidget):
 
 
     def addMyItems(self):
-        print("My node count: " + str(len(NUMERIC_NODES.keys())))
+        #print("My node count: " + str(len(NUMERIC_NODES.keys())))
         keys = list(NUMERIC_NODES.keys())
         keys.sort()
         for key in keys:

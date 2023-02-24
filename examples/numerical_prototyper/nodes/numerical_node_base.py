@@ -30,8 +30,23 @@ class NumericalNode(Node):
     GraphicsNode_class = NumericalGraphicsNode
     NodeContent_class = NumericalContent
 
-    def __init__(self, scene, inputs=[2, 2], outputs=[1]):
+    def __init__(self, scene, inputs=[2, 1], outputs=[1]):
         super().__init__(scene, self.__class__.op_title, inputs, outputs)
 
-        self.value = None
         self.markDirty()
+
+    def getScriptRepresentation(self) -> str: pass
+
+    def debugOutputs(self):
+        for nodeOutput in self.nodeOutputs:
+            print(nodeOutput)
+
+    def serialize(self):
+        res = super().serialize()
+        res['script_rep'] = self.getScriptRepresentation()
+        return res
+
+    def deserialize(self, data, hashmap={}, restore_id=True) :
+        res = super().deserialize(data, hashmap, restore_id)
+        print("Deserialized CalcNode '%s'" % self.__class__.__name__, "res:", res)
+        return res

@@ -1,3 +1,5 @@
+import json
+
 from nodeeditor.utils import loadStylesheets
 
 import numerical_paths
@@ -8,6 +10,19 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDockWidget, QAction
 from nodeeditor.node_editor_window import NodeEditorWindow
 from numerical_drag_listbox import QDMDragListbox
+
+from nodeeditor.node_edge import Edge
+from nodeeditor.node_edge_validators import (
+    edge_validator_debug,
+    edge_cannot_connect_two_outputs_or_two_inputs,
+    edge_cannot_connect_input_and_output_of_same_node,
+    edge_cannot_connect_input_and_output_of_different_type
+)
+
+# Edge.registerEdgeValidator(edge_validator_debug)
+Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
+Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
+Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_different_type)
 
 
 class NumericalWindow(NodeEditorWindow):
@@ -20,8 +35,8 @@ class NumericalWindow(NodeEditorWindow):
         self.nodeeditor.scene.addHasBeenModifiedListener(self.setTitle)
         self.setCentralWidget(self.nodeeditor)
 
-        self.test = NumericalSubWindow()
-        self.setCentralWidget(self.test)
+        self.nodeEditorSubwindow = NumericalSubWindow()
+        self.setCentralWidget(self.nodeEditorSubwindow)
 
         self.createNodesDock()
 
@@ -29,6 +44,7 @@ class NumericalWindow(NodeEditorWindow):
         self.createMenus()
         self.createTransformButton()
 
+        # self.showMaximized()
 
     def createNodesDock(self):
         self.nodesListWidget = QDMDragListbox()
@@ -53,5 +69,6 @@ class NumericalWindow(NodeEditorWindow):
         toolbar.addAction(transformAction)
 
     def createScript(self):
-        self.converter = TransformWindow()
+        a = json.dumps(self.nodeEditorSubwindow.scene.serialize(), indent=4)
+        self.converter = TransformWindow(a)
         self.converter.show()
