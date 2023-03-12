@@ -18,3 +18,4 @@ editor_stylesheet_dark_file = os.path.join(stylesheetDirectory, "nodeeditor-dark
 
 run_app = os.path.join(imageDirectory, "run-icon.png")
 save_file = os.path.join(imageDirectory, "file_save.png")
+delete_button = os.path.join(imageDirectory, "button_delete.png")

@@ -60,7 +60,7 @@ class TransformWindow(QWidget):
             return
 
         test = []
-        for treeNode in nodeTree.expand_tree():
+        for treeNode in nodeTree.expand_tree(mode=nodeTree.ZIGZAG):
             #print(self.getNodeByID(treeNode, nodeIRs).nodeName)
             test.append(treeNode)
             """
@@ -203,7 +203,7 @@ class TransformWindow(QWidget):
         self.script += " " + text
 
     def addNewLineToScript(self):
-        self.script += "\n "
+        self.script += "\n"
 
     def saveScript(self):
         print("TODO")

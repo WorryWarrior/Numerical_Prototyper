@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QLabel
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_node import Node
@@ -13,6 +14,10 @@ class NumericalGraphicsNode(QDMGraphicsNode):
         self.edge_padding = 0
         self.title_horizontal_padding = 8
         self.title_vertical_padding = 10
+
+    def initAssets(self):
+        super().initAssets()
+        self._title_font = QFont("Ubuntu", 8)
 
 
 class NumericalContent(QDMNodeContentWidget):

@@ -1,16 +1,32 @@
-import random
+from PyQt5.QtGui import QFont
 
 from numerical_prototyper.nodes.numerical_input_nodes import TestNumericalInputNodeContent
 from numerical_prototyper.nodes.numerical_node_base import NumericalNode, NumericalGraphicsNode
 from numerical_prototyper.numerical_node_customization_window_base import NumberInputNodeCustomizationWindow, \
-    FunctionInputNodeCustomizationWindow, EvaluateFunctionNodeCustomizationWindow
+    FunctionInputNodeCustomizationWindow, EvaluateFunctionNodeCustomizationWindow, MatrixInputNodeCustomizationWindow, \
+    FunctionZeroSearchNodeCustomizationWindow
 
 LISTBOX_MIMETYPE = "application/x-item"
 
-NUM_NODE_EVALUATE_FUNCTION = 1
-NUM_NODE_INPUT_NUMBER = 2
-NUM_NODE_INPUT_FUNCTION = 3
-NUM_NODE_OUTPUT = 10
+NUM_NODE_INPUT_NUMBER = 1
+NUM_NODE_INPUT_FUNCTION = 2
+NUM_NODE_INPUT_MATRIX = 3
+NUM_NODE_EVALUATE_FUNCTION = 4
+NUM_NODE_TRANSPOSE = 5
+NUM_NODE_CONDITION_NUMBER = 6
+NUM_NODE_ZERO_SEARCH = 7
+NUM_NODE_ADD = 8
+
+"""
+NUM_NONE_SUBTRACT = 6
+NUM_NODE_MULTIPLY = 7
+NUM_NODE_DIVIDE = 8
+NUM_NODE_SQUARE_ROOT = 9
+NUM_NODE_POWER = 10
+NUM_NODE_ABS = 11
+"""
+
+NUM_NODE_OUTPUT = 20
 
 NUMERIC_NODES = {
 }
@@ -49,7 +65,7 @@ def get_class_from_opcode(op_code):
 
 
 @register_numeric_node(NUM_NODE_EVALUATE_FUNCTION)
-class TestNumericalNode(NumericalNode):
+class EvaluateFunctionNode(NumericalNode):
     op_code = NUM_NODE_EVALUATE_FUNCTION
     op_title = "Evaluate function"
 
@@ -129,8 +145,251 @@ class TestNumericalNode(NumericalNode):
         self.nodeOutputs = [outputValue]
 
 
+@register_numeric_node(NUM_NODE_TRANSPOSE)
+class TransposeMatrixNode(NumericalNode):
+    op_code = NUM_NODE_TRANSPOSE
+    op_title = "Transpose matrix"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[0], outputs=[0])
+        self.customizationWindow = EvaluateFunctionNodeCustomizationWindow()
+        self.matrixValue = ''
+        self.useVariable = False
+        self.printOutput = False
+        self.variableName = ''
+        self.nodeOutputs = [""]
+
+    def getScriptRepresentation(self):
+        res = ""
+
+        if self.matrixValue == '':
+            return res
+
+        if self.variableName != '':
+            res += f'{self.variableName} = '
+
+        res += f'{self.matrixValue}\''
+
+        if not self.printOutput:
+            res += ";"
+
+        return res
+
+    def onDoubleClicked(self, event):
+        self.customizationWindow.openWindow()
+
+        retrievedVariableName = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableNameParameterKey)
+
+        if retrievedVariableName is not None:
+            self.variableName = retrievedVariableName
+
+        retrievedUseVariableValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.useVariableKey)
+        self.useVariable = retrievedUseVariableValue
+
+        retrievedPrintOutputValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.printOutputKey)
+        self.printOutput = retrievedPrintOutputValue
+
+        if self.variableName == '':
+            outputValue = f'{self.matrixValue}\''
+        else:
+            outputValue = self.variableName
+
+        self.nodeOutputs = [outputValue]
+
+        self.markDescendantsDirty()
+
+    def onInputChanged(self, socket: None):
+        self.eval()
+
+    def onMarkedDirty(self):
+        self.eval()
+
+    def eval(self, index=0):
+
+        if self.getInput(0) is None:
+            self.matrixValue = None
+            return
+
+        self.matrixValue = self.getInput(0).nodeOutputs[0]
+
+        if self.variableName == '' or not self.useVariable:
+            outputValue = f'{self.matrixValue}\''
+        else:
+            outputValue = self.variableName
+
+        if self.matrixValue.strip() == '':
+            outputValue = ''
+
+        self.nodeOutputs = [outputValue]
+
+
+@register_numeric_node(NUM_NODE_CONDITION_NUMBER)
+class ConditionNumberNode(NumericalNode):
+    op_code = NUM_NODE_CONDITION_NUMBER
+    op_title = "Find Condition Number"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[0], outputs=[1])
+        self.customizationWindow = EvaluateFunctionNodeCustomizationWindow()
+        self.matrixValue = ''
+        self.useVariable = False
+        self.printOutput = False
+        self.variableName = ''
+        self.nodeOutputs = [""]
+
+    def getScriptRepresentation(self):
+        res = ""
+
+        if self.matrixValue == '':
+            return res
+
+        if self.variableName != '':
+            res += f'{self.variableName} = '
+
+        res += f'cond({self.matrixValue})'
+
+        if not self.printOutput:
+            res += ";"
+
+        return res
+
+    def onDoubleClicked(self, event):
+        self.customizationWindow.openWindow()
+
+        retrievedVariableName = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableNameParameterKey)
+
+        if retrievedVariableName is not None:
+            self.variableName = retrievedVariableName
+
+        retrievedUseVariableValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.useVariableKey)
+        self.useVariable = retrievedUseVariableValue
+
+        retrievedPrintOutputValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.printOutputKey)
+        self.printOutput = retrievedPrintOutputValue
+
+        if self.variableName == '':
+            outputValue = f'cond({self.matrixValue})'
+        else:
+            outputValue = self.variableName
+
+        self.nodeOutputs = [outputValue]
+
+        self.markDescendantsDirty()
+
+    def onInputChanged(self, socket: None):
+        self.eval()
+
+    def onMarkedDirty(self):
+        self.eval()
+
+    def eval(self, index=0):
+
+        if self.getInput(0) is None:
+            self.matrixValue = None
+            return
+
+        self.matrixValue = self.getInput(0).nodeOutputs[0]
+
+        if self.variableName == '' or not self.useVariable:
+            outputValue = f'cond({self.matrixValue})'
+        else:
+            outputValue = self.variableName
+
+        if self.matrixValue.strip() == '':
+            outputValue = ''
+
+        self.nodeOutputs = [outputValue]
+
+
+@register_numeric_node(NUM_NODE_ADD)
+class AddNumbersNode(NumericalNode):
+    op_code = NUM_NODE_ADD
+    op_title = "Add Numbers"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[1, 1], outputs=[1])
+        self.customizationWindow = EvaluateFunctionNodeCustomizationWindow()
+        self.firstNumberName = ''
+        self.secondNumberName = ''
+        self.useVariable = False
+        self.printOutput = False
+        self.variableName = ''
+        self.nodeOutputs = [""]
+
+    def getScriptRepresentation(self):
+        res = ""
+
+        if self.firstNumberName == '' or self.secondNumberName == '':
+            return res
+
+        if self.variableName != '':
+            res += f'{self.variableName} = '
+
+        res += f'{str(self.firstNumberName)} + {self.secondNumberName}'
+
+        if not self.printOutput:
+            res += ";"
+
+        return res
+
+    def onDoubleClicked(self, event):
+        self.customizationWindow.openWindow()
+
+        retrievedVariableName = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableNameParameterKey)
+
+        if retrievedVariableName is not None:
+            self.variableName = retrievedVariableName
+
+        retrievedUseVariableValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.useVariableKey)
+        self.useVariable = retrievedUseVariableValue
+
+        retrievedPrintOutputValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.printOutputKey)
+        self.printOutput = retrievedPrintOutputValue
+
+        if self.variableName == '':
+            outputValue = f'{str(self.firstNumberName)} + {self.secondNumberName}'
+        else:
+            outputValue = self.variableName
+
+        self.nodeOutputs = [outputValue]
+
+        self.markDescendantsDirty()
+
+    def onInputChanged(self, socket: None):
+        self.eval()
+
+    def onMarkedDirty(self):
+        self.eval()
+
+    def eval(self, index=0):
+
+        if self.getInput(0) is None or self.getInput(1) is None:
+            self.firstNumberName = None
+            self.secondNumberName = None
+            return
+
+        self.firstNumberName = self.getInput(0).nodeOutputs[0]
+        self.secondNumberName = self.getInput(1).nodeOutputs[0]
+
+        if self.variableName == '' or not self.useVariable:
+            outputValue = f'{str(self.firstNumberName)} + {self.secondNumberName}'
+        else:
+            outputValue = self.variableName
+
+        self.nodeOutputs = [outputValue]
+
+
 @register_numeric_node(NUM_NODE_INPUT_NUMBER)
-class TestNumericalInputNode(NumericalNode):
+class NumberInputNode(NumericalNode):
     op_code = NUM_NODE_INPUT_NUMBER
     op_title = "Number Input"
 
@@ -148,7 +407,10 @@ class TestNumericalInputNode(NumericalNode):
         if self.inputValue == '':
             return res
 
-        res += f'{str(self.inputVariableName)} = {str(self.inputValue)}'
+        if self.inputVariableName != '':
+            res += f'{str(self.inputVariableName)} = '
+
+        res += f'{str(self.inputValue)}'
 
         if not self.printVariable:
             res += ";"
@@ -165,8 +427,6 @@ class TestNumericalInputNode(NumericalNode):
         retrievedValue = self.customizationWindow.getParameterValue(self.customizationWindow.valueParameterKey)
         if retrievedValue is not None:
             self.inputValue = retrievedValue
-            self.content.valueLabel.setText(str(retrievedValue))
-            self.content.valueLabel.adjustSize()
 
         retrievedVariableName = self.customizationWindow.getParameterValue(
             self.customizationWindow.variableNameParameterKey)
@@ -177,12 +437,20 @@ class TestNumericalInputNode(NumericalNode):
             self.customizationWindow.variablePrintKey)
         self.printVariable = retrievedVariablePrintValue
 
-        self.nodeOutputs = [str(self.inputVariableName)]
+        if self.inputVariableName != '':
+            self.nodeOutputs = [str(self.inputVariableName)]
+        else:
+            self.nodeOutputs = [str(self.inputValue)]
+
+        self.content.valueLabel.setText(self.inputValue)
+        self.content.valueLabel.setFont(QFont('Arial', 12))
+        self.content.valueLabel.adjustSize()
+
         self.markDescendantsDirty()
 
 
 @register_numeric_node(NUM_NODE_INPUT_FUNCTION)
-class TestNumericalInputNode(NumericalNode):
+class FunctionInputNode(NumericalNode):
     op_code = NUM_NODE_INPUT_FUNCTION
     op_title = "Function Input"
 
@@ -198,7 +466,7 @@ class TestNumericalInputNode(NumericalNode):
     def getScriptRepresentation(self):
         res = ""
 
-        if self.inputValue == '':
+        if self.inputValue == '' or self.inputVariableName == '':
             return res
 
         if self.inputVariableName != '':
@@ -221,8 +489,6 @@ class TestNumericalInputNode(NumericalNode):
         retrievedValue = self.customizationWindow.getParameterValue(self.customizationWindow.valueParameterKey)
         if retrievedValue is not None:
             self.inputValue = retrievedValue
-            self.content.valueLabel.setText(str(retrievedValue))
-            self.content.valueLabel.adjustSize()
 
         retrievedVariableName = self.customizationWindow.getParameterValue(
             self.customizationWindow.variableNameParameterKey)
@@ -239,13 +505,131 @@ class TestNumericalInputNode(NumericalNode):
         self.printVariable = retrievedVariablePrintValue
 
         self.nodeOutputs = [str(self.inputVariableName)]
+
+        self.content.valueLabel.setText(self.inputValue)
+        self.content.valueLabel.setFont(QFont('Arial', 12))
+        self.content.valueLabel.adjustSize()
+
+        self.markDescendantsDirty()
+
+
+@register_numeric_node(NUM_NODE_INPUT_MATRIX)
+class MatrixInputNode(NumericalNode):
+    op_code = NUM_NODE_INPUT_MATRIX
+    op_title = "Matrix Input"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[], outputs=[0])
+        self.customizationWindow = MatrixInputNodeCustomizationWindow()
+        self.matrixWidth = 0
+        self.matrixHeight = 0
+        self.matrixValues = []
+        self.inputVariableName = ''
+        self.printVariable = False
+        self.nodeOutputs = [""]
+
+    def getScriptRepresentation(self):
+        res = ""
+
+        if len(self.matrixValues) <= 0:
+            return res
+
+        if self.inputVariableName != '':
+            res += f'{str(self.inputVariableName)} = '
+
+        res += self.getMatrixRepresentation()
+
+        if not self.printVariable:
+            res += ";"
+
+        return res
+
+    def initInnerClasses(self):
+        self.content = TestNumericalInputNodeContent(self)
+        self.grNode = NumericalGraphicsNode(self)
+
+    def getMatrixRepresentation(self):
+        res = ''
+        res += '['
+
+        for i in range(len(self.matrixValues)):
+            res += f'{self.matrixValues[i]} '
+
+            if (i + 1) % self.matrixWidth == 0:
+                res += '; '
+
+        res += ']'
+        return res
+
+    def onDoubleClicked(self, event):
+        self.customizationWindow.openWindow()
+
+        retrievedValues = self.customizationWindow.getParameterValue(self.customizationWindow.valueParameterKey)
+        self.matrixValues = retrievedValues
+
+        retrievedWidth = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableWidthDimensionValueKey)
+        if retrievedWidth.strip() != '':
+            self.matrixWidth = int(retrievedWidth)
+
+        retrievedHeight = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableHeightDimensionValueKey)
+        if retrievedHeight.strip() != '':
+            self.matrixHeight = int(retrievedHeight)
+
+        retrievedVariableName = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variableNameParameterKey)
+        if retrievedVariableName is not None:
+            self.inputVariableName = retrievedVariableName
+
+        retrievedVariablePrintValue = self.customizationWindow.getParameterValue(
+            self.customizationWindow.variablePrintKey)
+        self.printVariable = retrievedVariablePrintValue
+
+        if str(self.inputVariableName).strip() == '':
+            self.nodeOutputs = [self.getMatrixRepresentation()]
+        else:
+            self.nodeOutputs = [str(self.inputVariableName)]
+
+        if len(self.matrixValues) <= 0:
+            self.nodeOutputs = ['']
+
+        # self.nodeOutputs = [self.getScriptRepresentation()]
         self.markDescendantsDirty()
 
 
 @register_numeric_node(NUM_NODE_OUTPUT)
-class TestNumericalInputNode(NumericalNode):
+class OutputNode(NumericalNode):
     op_code = NUM_NODE_OUTPUT
     op_title = "Output"
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[0, 1, 2], outputs=[])
+
+
+@register_numeric_node(NUM_NODE_ZERO_SEARCH)
+class FunctionZeroSearchNode(NumericalNode):
+    op_code = NUM_NODE_ZERO_SEARCH
+    op_title = "Bisection"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[1, 1, 2], outputs=[1])
+        self.customizationWindow = FunctionZeroSearchNodeCustomizationWindow(inputs=[1, 1, 2], outputs=[1])
+        self.inputValue = ''
+        self.inputVariableName = None
+        self.printVariable = False
+        self.nodeOutputs = [""]
+
+    def getScriptRepresentation(self):
+        res = ""
+
+        return res
+
+    def initInnerClasses(self):
+        self.content = TestNumericalInputNodeContent(self)
+        self.grNode = NumericalGraphicsNode(self)
+
+    def onDoubleClicked(self, event):
+        self.customizationWindow.openWindow()
+
+        self.markDescendantsDirty()
