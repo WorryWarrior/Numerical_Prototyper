@@ -1,0 +1,138 @@
+[
+   {
+      "type": "WhileElement",
+      "parameters": {
+         "-ConditionLeftValue": "abs(inNum_2 - inNum_1)",
+         "-ConditionRightValue": "0.001",
+         "-ConditionSignKey": 2
+      }
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "xNew",
+         "-AssignedValue": "(inNum_1 + inNum_2) / 2"
+      }
+   },
+   {
+      "type": "IfElement",
+      "parameters": {
+         "-ConditionLeftValue": "inFun_1(xNew)",
+         "-ConditionRightValue": "0",
+         "-ConditionSignKey": 5,
+         "-ConditionType": 2
+      }
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "inNum_1",
+         "-AssignedValue": "xNew"
+      }
+   },
+   {
+      "type": "CloseBlockSilentlyElement",
+      "parameters": null
+   },
+   {
+      "type": "ElseIfElement",
+      "parameters": {
+         "-ConditionLeftValue": "inFun_1(xNew)",
+         "-ConditionRightValue": "0",
+         "-ConditionSignKey": 2
+      }
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "inNum_2",
+         "-AssignedValue": "xNew"
+      }
+   },
+   {
+      "type": "CloseBlockSilentlyElement",
+      "parameters": null
+   },
+   {
+      "type": "ElseElement",
+      "parameters": null
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "inNum_2",
+         "-AssignedValue": "xNew"
+      }
+   },
+   {
+      "type": "BreakElement",
+      "parameters": null
+   },
+   {
+      "type": "CloseBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "IfElement",
+      "parameters": {
+         "-ConditionLeftValue": "abs(inNum_1)",
+         "-ConditionRightValue": "inNum_2",
+         "-ConditionSignKey": 4,
+         "-ConditionType": 1
+      }
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "outNum_1",
+         "-AssignedValue": "inNum_1"
+      }
+   },
+   {
+      "type": "CloseBlockSilentlyElement",
+      "parameters": null
+   },
+   {
+      "type": "ElseElement",
+      "parameters": null
+   },
+   {
+      "type": "OpenBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "VariableElement",
+      "parameters": {
+         "-AssignedVariable": "outNum_1",
+         "-AssignedValue": "inNum_2"
+      }
+   },
+   {
+      "type": "CloseBlockElement",
+      "parameters": null
+   },
+   {
+      "type": "CloseBlockElement",
+      "parameters": null
+   }
+]

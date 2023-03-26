@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QLabel
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_node import Node
 from nodeeditor.node_graphics_node import QDMGraphicsNode
+from numerical_prototyper.numerical_node_content import NumericalContent
 
 
 class NumericalGraphicsNode(QDMGraphicsNode):
@@ -18,12 +19,6 @@ class NumericalGraphicsNode(QDMGraphicsNode):
     def initAssets(self):
         super().initAssets()
         self._title_font = QFont("Ubuntu", 8)
-
-
-class NumericalContent(QDMNodeContentWidget):
-    def initUI(self):
-        lbl = QLabel(self.node.content_label, self)
-        lbl.setObjectName(self.node.content_label_objname)
 
 
 class NumericalNode(Node):

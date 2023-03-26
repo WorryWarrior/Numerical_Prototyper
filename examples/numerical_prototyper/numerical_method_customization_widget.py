@@ -19,9 +19,10 @@ class NumericalMethodCustomizationWidget(QtWidgets.QTabWidget):
         scrollWidget, add = self.generateScrollWidget('Logic')
 
         from numerical_prototyper.numerical_node_customization_window_element \
-            import IfElement, WhileElement, BreakElement
+            import IfElement, WhileElement, ForElement, BreakElement
         add(IfElement)
         add(WhileElement)
+        add(ForElement)
         add(BreakElement)
 
         return scrollWidget
@@ -125,19 +126,17 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
 
     def __init__(self, previewTextWindow):
         super(NumericalMethodCustomizationCommandList, self).__init__()
-        from numerical_prototyper.numerical_node_customization_window_element \
-            import WhileElement, IfElement, VariableElement, BreakElement, LogElement
 
-        self.commands = {
-            "WhileElement": WhileElement,
-            "IfElement": IfElement,
-            "VariableElement": VariableElement,
-            "BreakElement": BreakElement,
-            "LogElement": LogElement
-        }
+        from numerical_prototyper.numerical_node_customization_window_element import \
+            NumericalCustomizationWindowElementBase, WhileElement, ForElement
+
+        self.commands = {}
+
+        for elementClass in NumericalCustomizationWindowElementBase.__subclasses__():
+            self.commands[elementClass.__name__] = elementClass
 
         self.previewTextWindow = previewTextWindow
-        self.logicCommands = [WhileElement]
+        self.logicCommands = [WhileElement, ForElement]
 
         self.initUI()
 
@@ -363,6 +362,35 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
                     indent -= 1
             else:
                 return None
+
+    def keyPressEvent(self, event):
+        super(NumericalMethodCustomizationCommandList, self).keyPressEvent(event)
+
+        if event.key() == QtCore.Qt.Key_Delete:
+            self.deleteSelected()
+
+        if event == QtGui.QKeySequence.SelectAll:
+            self.selectAll()
+
+    def loadData(self, data):
+        self.clear()
+        for commandSave in data:
+            newCommand = self.addCommand(self.commands[commandSave['type']], parameters=commandSave['parameters'])
+            newCommand.loadTextValue()
+
+        self.changePreviewText()
+
+        self.refreshIndents()
+
+
+    def getSaveData(self):
+        commandList = []
+        commandsOrdered = [self.getCommand(self.item(index)) for index in range(self.count())]
+
+        for command in commandsOrdered:
+            commandList.append(command.getSaveData())
+
+        return commandList
 
 
 class NumericalMethodCustomizationCommandListElement(QtWidgets.QWidget):

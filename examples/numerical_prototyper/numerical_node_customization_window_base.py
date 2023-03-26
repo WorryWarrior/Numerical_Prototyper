@@ -1,5 +1,10 @@
+import json
+from copy import deepcopy
+
+from PyQt5.QtWidgets import QAction
 from qtpy import QtWidgets, QtCore, QtGui
 
+from numerical_prototyper import numerical_global, numerical_paths
 from numerical_prototyper.numerical_method_customization_widget import NumericalMethodCustomizationWidget, \
     NumericalMethodCustomizationCommandList, NumericalMethodCustomizationPreviewWidget
 
@@ -18,7 +23,7 @@ class NodeCustomizationWindowBase:
         self.parameters = parameters
         [self.windowWidth, self.windowHeight] = self.getWindowDimensions()
 
-    def openWindow(self, acceptCallback = None):
+    def openWindow(self, acceptCallback=None):
         if self.parameters is None:
             return True
 
@@ -113,7 +118,6 @@ class NumberInputNodeCustomizationWindow(NodeCustomizationWindowBase):
             }
 
     def dressWindow(self, dialogWindow):
-        
         dialogWindow.variableNameEdit = QtWidgets.QLineEdit()
         dialogWindow.variableNameEdit.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp(VARIABLE_NAME_REGEX)))
         dialogWindow.variableNameEdit.setText(str(self.parameters[self.variableNameParameterKey]))
@@ -408,42 +412,134 @@ class EvaluateFunctionNodeCustomizationWindow(NodeCustomizationWindowBase):
 
 
 class FunctionZeroSearchNodeCustomizationWindow(NodeCustomizationWindowBase):
-    title = "Function Zero Search"
+    title = "Customizable Method Constructor"
+
+    functionNameKey = "-FunctionName"
+    stateKey = "-State"
 
     def __init__(self, inputs, outputs, parameters=None):
         super(FunctionZeroSearchNodeCustomizationWindow, self).__init__(parameters)
 
         self.inputs = inputs
         self.outputs = outputs
+        self.declarationText = ''
+        self.callText = ''
+        self.previewWidget = None
 
         if self.parameters is None:
             self.parameters = {
-
+                self.functionNameKey: '',
+                self.stateKey: '',
             }
 
     def getWindowDimensions(self) -> [int, int]:
         return [1000, 800]
 
     def dressWindow(self, dialogWindow):
-        functionNameInput = QtWidgets.QLineEdit()
-        functionNameInput.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp(VARIABLE_NAME_REGEX)))
-
+        dialogWindow.functionNameInput = QtWidgets.QLineEdit()
+        dialogWindow.functionNameInput.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp(VARIABLE_NAME_REGEX)))
+        dialogWindow.functionNameInput.setText(str(self.parameters[self.functionNameKey]))
 
         testLayout = QtWidgets.QHBoxLayout()
-        testPreviewWidget = NumericalMethodCustomizationPreviewWidget(self.inputs, self.outputs, functionNameInput)
-        testPreviewWidget.setReadOnly(True)
-        testListWidget = NumericalMethodCustomizationCommandList(testPreviewWidget)
-        testListWidgetTwo = NumericalMethodCustomizationWidget(parent=testListWidget)
+        previewWidget = NumericalMethodCustomizationPreviewWidget(self.inputs, self.outputs,
+                                                                  dialogWindow.functionNameInput)
+        previewWidget.setReadOnly(True)
+        self.previewWidget = previewWidget
+        dialogWindow.commandListWidget = NumericalMethodCustomizationCommandList(previewWidget)
+        commandTabWidget = NumericalMethodCustomizationWidget(parent=dialogWindow.commandListWidget)
 
-        functionNameInput.textChanged.connect(testListWidget.changePreviewText)
+        dialogWindow.functionNameInput.textChanged.connect(dialogWindow.commandListWidget.changePreviewText)
+        dialogWindow.functionNameInput.textChanged.connect(lambda: self.updateCallText(dialogWindow))
+        previewWidget.textChanged.connect(self.updateDeclarationText)
 
-        testLayout.addWidget(testPreviewWidget)
-        testLayout.addWidget(testListWidget)
-        testLayout.addWidget(testListWidgetTwo)
+        testLayout.addWidget(previewWidget)
+        testLayout.addWidget(dialogWindow.commandListWidget)
+        testLayout.addWidget(commandTabWidget)
 
-        testListWidgetTwo.initUI()
+        commandTabWidget.initUI()
 
-        self.addRow(dialogWindow, QtWidgets.QLabel('Method Name '), functionNameInput)
+        dialogWindow.commandListWidget.loadData(self.parameters[self.stateKey])
+
+        self.addRow(dialogWindow, QtWidgets.QLabel('Method Name '), dialogWindow.functionNameInput)
         dialogWindow.content.addLayout(testLayout)
 
+        menuBar = QtWidgets.QMenuBar(dialogWindow)
+        fileMenu = menuBar.addMenu('&File')
+        loadAction = QtWidgets.QAction('&Load', fileMenu,
+                                       triggered=lambda: self.loadListWidget(dialogWindow.commandListWidget))
+        saveAction = QtWidgets.QAction('&Save', fileMenu,
+                                       triggered=lambda: self.saveListWidget(dialogWindow.commandListWidget))
+        fileMenu.addAction(loadAction)
+        fileMenu.addAction(saveAction)
+        menuBar.show()
+
         return dialogWindow
+
+    def updateDeclarationText(self):
+        self.declarationText = self.previewWidget.toPlainText()
+
+    def updateCallText(self, dialogWindow):
+        res = ''
+        res += f'{dialogWindow.functionNameInput.text()}('
+
+        for i in range(len(self.inputs)):
+            res += f'input_{i}'
+
+            if i != len(self.inputs) - 1:
+                res += ', '
+
+        res += ')'
+
+        self.callText = res
+
+    def getCallText(self, *args):
+        res = self.callText
+
+        for i in range(len(args)):
+            res = res.replace(f'input_{i}', args[i])
+
+        return res
+
+    def extractParameters(self, dialogWindow):
+        newParameters = {
+            self.functionNameKey: dialogWindow.functionNameInput.text(),
+            self.stateKey: dialogWindow.commandListWidget.getSaveData(),
+        }
+
+        self.parameters.update(newParameters)
+
+        return self.parameters
+
+    def loadListWidget(self, listWidget):
+        reply = QtWidgets.QMessageBox.question(listWidget, 'Warning',
+                                               "Continue?",
+                                               QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No |
+                                               QtWidgets.QMessageBox.Cancel, QtWidgets.QMessageBox.Yes)
+        if reply != QtWidgets.QMessageBox.Yes:
+            return False
+
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(parent=listWidget,
+                                                            caption="Load method logic",
+                                                            filter="Method Logic (*.logic)",
+                                                            directory=numerical_paths.saveDirectory)
+        if filename == "":
+            return False
+
+        try:
+            loadData = json.load(open(filename))
+        except IOError:
+            return
+
+        listWidget.loadData(deepcopy(loadData))
+
+    def saveListWidget(self, listWidget):
+        numerical_global.ensurePathExists(numerical_paths.saveDirectory)
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=listWidget,
+                                                            caption="Save method logic",
+                                                            filter="Method Logic (*.logic)",
+                                                            directory=numerical_paths.saveDirectory)
+        if filename == "":
+            return False
+
+        saveData = listWidget.getSaveData()
+        json.dump(saveData, open(filename, 'w'), sort_keys=False, indent=3, separators=(',', ': '))

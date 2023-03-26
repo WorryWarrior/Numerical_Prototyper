@@ -15,6 +15,14 @@ class NumericalCustomizationWindowElementBase(NodeCustomizationWindowBase):
         # newWidget.setIcon(self.icon)
         return newWidget
 
+    def loadTextValue(self):
+        pass
+
+    def getSaveData(self):
+        commandSave = {'type': self.__class__.__name__,
+                       'parameters': self.parameters}
+        return commandSave
+
 
 class IfElement(NumericalCustomizationWindowElementBase):
     title = 'if'
@@ -25,6 +33,8 @@ class IfElement(NumericalCustomizationWindowElementBase):
     conditionRightValueKey = '-ConditionRightValue'
     conditionSignKey = '-ConditionSignKey'
     conditionTypeKey = '-ConditionType'
+
+    conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
 
     def __init__(self, parameters=None):
         super(IfElement, self).__init__(parameters)
@@ -66,13 +76,20 @@ class IfElement(NumericalCustomizationWindowElementBase):
         return dialogWindow
 
     def setTextValue(self, dialogWindow):
-        conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
         res = ''
 
         res += f'if {dialogWindow.conditionLeftValueEdit.text()} '
-        res += conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
+        res += self.conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
         res += f' {dialogWindow.conditionRightValueEdit.text()}'
 
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'if {self.parameters[self.conditionLeftValueKey]} '
+        res += self.conditionSigns[self.parameters[self.conditionSignKey]]
+        res += f' {self.parameters[self.conditionRightValueKey]}'
         self.textValue = res
 
     def extractParameters(self, dialogWindow):
@@ -97,6 +114,8 @@ class WhileElement(NumericalCustomizationWindowElementBase):
     conditionLeftValueKey = '-ConditionLeftValue'
     conditionRightValueKey = '-ConditionRightValue'
     conditionSignKey = '-ConditionSignKey'
+
+    conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
 
     def __init__(self, parameters=None):
         super(WhileElement, self).__init__(parameters)
@@ -130,12 +149,93 @@ class WhileElement(NumericalCustomizationWindowElementBase):
         return dialogWindow
 
     def setTextValue(self, dialogWindow):
-        conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
         res = ''
 
         res += f'while {dialogWindow.conditionLeftValueEdit.text()} '
-        res += conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
+        res += self.conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
         res += f' {dialogWindow.conditionRightValueEdit.text()}'
+
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'while {self.parameters[self.conditionLeftValueKey]} '
+        res += self.conditionSigns[self.parameters[self.conditionSignKey]]
+        res += f' {self.parameters[self.conditionRightValueKey]}'
+
+        self.textValue = res
+
+    def extractParameters(self, dialogWindow):
+        self.setTextValue(dialogWindow)
+
+        newParameters = {
+            self.conditionLeftValueKey: dialogWindow.conditionLeftValueEdit.text(),
+            self.conditionRightValueKey: dialogWindow.conditionRightValueEdit.text(),
+            self.conditionSignKey: dialogWindow.conditionSignEdit.currentIndex(),
+        }
+        self.parameters.update(newParameters)
+
+        return self.parameters
+
+
+class ForElement(NumericalCustomizationWindowElementBase):
+    title = 'For'
+    icon = ''
+    textValue = 'for'
+
+    conditionLeftValueKey = '-ConditionLeftValue'
+    conditionRightValueKey = '-ConditionRightValue'
+    conditionSignKey = '-ConditionSignKey'
+
+    conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
+
+    def __init__(self, parameters=None):
+        super(ForElement, self).__init__(parameters)
+
+        if self.parameters is None:
+            self.parameters = {
+                self.conditionLeftValueKey: '',
+                self.conditionRightValueKey: '',
+                self.conditionSignKey: 0,
+            }
+
+    def dressWindow(self, dialogWindow):
+        dialogWindow.conditionLeftValueEdit = QtWidgets.QLineEdit()
+        dialogWindow.conditionLeftValueEdit.setText(str(self.parameters[self.conditionLeftValueKey]))
+        self.addRow(dialogWindow, QtWidgets.QLabel('Condition Left Value'), dialogWindow.conditionLeftValueEdit)
+
+        dialogWindow.conditionSignEdit = QtWidgets.QComboBox()
+        dialogWindow.conditionSignEdit.addItem('Equal')
+        dialogWindow.conditionSignEdit.addItem('Not Equal')
+        dialogWindow.conditionSignEdit.addItem('Greater than')
+        dialogWindow.conditionSignEdit.addItem('Greater or equal')
+        dialogWindow.conditionSignEdit.addItem('Less than')
+        dialogWindow.conditionSignEdit.addItem('Less or equal')
+        dialogWindow.conditionSignEdit.setCurrentIndex(self.parameters[self.conditionSignKey])
+        self.addRow(dialogWindow, QtWidgets.QLabel('Condition Structure'), dialogWindow.conditionSignEdit)
+
+        dialogWindow.conditionRightValueEdit = QtWidgets.QLineEdit()
+        dialogWindow.conditionRightValueEdit.setText(str(self.parameters[self.conditionRightValueKey]))
+        self.addRow(dialogWindow, QtWidgets.QLabel('Condition Right Value'), dialogWindow.conditionRightValueEdit)
+
+        return dialogWindow
+
+    def setTextValue(self, dialogWindow):
+        res = ''
+
+        res += f'while {dialogWindow.conditionLeftValueEdit.text()} '
+        res += self.conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
+        res += f' {dialogWindow.conditionRightValueEdit.text()}'
+
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'while {self.parameters[self.conditionLeftValueKey]} '
+        res += self.conditionSigns[self.parameters[self.conditionSignKey]]
+        res += f' {self.parameters[self.conditionRightValueKey]}'
 
         self.textValue = res
 
@@ -185,6 +285,13 @@ class VariableElement(NumericalCustomizationWindowElementBase):
         res = ''
 
         res += f'{dialogWindow.assignedVariableEdit.text()} = {dialogWindow.assignedValueEdit.text()};'
+
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'{self.parameters[self.assignedVariableKey]} = {self.parameters[self.assignedValueKey]};'
 
         self.textValue = res
 
@@ -263,6 +370,8 @@ class ElseIfElement(NumericalCustomizationWindowElementBase):
     conditionRightValueKey = '-ConditionRightValue'
     conditionSignKey = '-ConditionSignKey'
 
+    conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
+
     def __init__(self, parameters=None):
         super(ElseIfElement, self).__init__(parameters)
 
@@ -294,12 +403,20 @@ class ElseIfElement(NumericalCustomizationWindowElementBase):
         return dialogWindow
 
     def setTextValue(self, dialogWindow):
-        conditionSigns = ['==', '~=', '>', '>=', '<', '<=']
         res = ''
 
         res += f'elseif {dialogWindow.conditionLeftValueEdit.text()} '
-        res += conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
+        res += self.conditionSigns[dialogWindow.conditionSignEdit.currentIndex()]
         res += f' {dialogWindow.conditionRightValueEdit.text()}'
+
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'elseif {self.parameters[self.conditionLeftValueKey]} '
+        res += self.conditionSigns[self.parameters[self.conditionSignKey]]
+        res += f' {self.parameters[self.conditionRightValueKey]}'
 
         self.textValue = res
 
@@ -338,7 +455,15 @@ class LogElement(NumericalCustomizationWindowElementBase):
 
     def setTextValue(self, dialogWindow):
         res = ''
-        res += f'disp({dialogWindow.loggedValueEdit.text()}); '
+
+        res += f'disp({dialogWindow.loggedValueEdit.text()});'
+
+        self.textValue = res
+
+    def loadTextValue(self):
+        res = ''
+
+        res += f'disp({self.parameters[self.loggedValueKey]});'
 
         self.textValue = res
 

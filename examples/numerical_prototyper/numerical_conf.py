@@ -1,7 +1,9 @@
 from PyQt5.QtGui import QFont
 
+
 from numerical_prototyper.nodes.numerical_input_nodes import TestNumericalInputNodeContent
 from numerical_prototyper.nodes.numerical_node_base import NumericalNode, NumericalGraphicsNode
+from numerical_prototyper.numerical_node_content import EvaluateFunctionContent
 from numerical_prototyper.numerical_node_customization_window_base import NumberInputNodeCustomizationWindow, \
     FunctionInputNodeCustomizationWindow, EvaluateFunctionNodeCustomizationWindow, MatrixInputNodeCustomizationWindow, \
     FunctionZeroSearchNodeCustomizationWindow
@@ -70,7 +72,7 @@ class EvaluateFunctionNode(NumericalNode):
     op_title = "Evaluate function"
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[2, 1], outputs=[1])
+        super().__init__(scene, inputs=[2], outputs=[1])
         self.customizationWindow = EvaluateFunctionNodeCustomizationWindow()
         self.functionName = ''
         self.argumentName = ''
@@ -78,6 +80,11 @@ class EvaluateFunctionNode(NumericalNode):
         self.printOutput = False
         self.variableName = ''
         self.nodeOutputs = [""]
+
+    def initInnerClasses(self):
+        self.content = EvaluateFunctionContent(self)
+        self.grNode = NumericalGraphicsNode(self)
+        self.content.edit.textChanged.connect(lambda: self.setArgumentValue(self.content.edit.text()))
 
     def getScriptRepresentation(self):
         res = ""
@@ -129,13 +136,14 @@ class EvaluateFunctionNode(NumericalNode):
 
     def eval(self, index=0):
 
-        if self.getInput(0) is None or self.getInput(1) is None:
+        """or self.getInput(1) is None:"""
+        if self.getInput(0) is None:
             self.functionName = None
-            self.argumentName = None
+            #self.argumentName = None
             return
 
         self.functionName = self.getInput(0).nodeOutputs[0]
-        self.argumentName = self.getInput(1).nodeOutputs[0]
+        #self.argumentName = self.getInput(1).nodeOutputs[0]
 
         if self.variableName == '' or not self.useVariable:
             outputValue = f'{str(self.functionName)}({self.argumentName})'
@@ -143,6 +151,10 @@ class EvaluateFunctionNode(NumericalNode):
             outputValue = self.variableName
 
         self.nodeOutputs = [outputValue]
+
+    def setArgumentValue(self, value):
+        if value != '':
+            self.argumentName = value
 
 
 @register_numeric_node(NUM_NODE_TRANSPOSE)
@@ -615,15 +627,60 @@ class FunctionZeroSearchNode(NumericalNode):
     def __init__(self, scene):
         super().__init__(scene, inputs=[1, 1, 2], outputs=[1])
         self.customizationWindow = FunctionZeroSearchNodeCustomizationWindow(inputs=[1, 1, 2], outputs=[1])
-        self.inputValue = ''
-        self.inputVariableName = None
+        self.firstInputValue = ''
+        self.secondInputValue = ''
+        self.thirdInputValue = ''
+
+        self.callText = ''
+        self.declarationText = ''
         self.printVariable = False
         self.nodeOutputs = [""]
 
     def getScriptRepresentation(self):
         res = ""
+        res += self.customizationWindow.getCallText(
+                str(self.firstInputValue),
+                str(self.secondInputValue),
+                str(self.thirdInputValue))
 
+        res += "\n\n"
+        res += self.declarationText
         return res
+
+    def onInputChanged(self, socket: None):
+        self.eval()
+
+    def onMarkedDirty(self):
+        self.eval()
+
+    def eval(self, index=0):
+
+        if self.getInput(0) is None or self.getInput(1) is None or self.getInput(2) is None:
+            self.firstInputValue = None
+            self.secondInputValue = None
+            self.thirdInputValue = None
+            return
+
+        self.firstInputValue = self.getInput(0).nodeOutputs[0]
+        self.secondInputValue = self.getInput(1).nodeOutputs[0]
+        self.thirdInputValue = self.getInput(2).nodeOutputs[0]
+
+        """
+        if self.variableName == '' or not self.useVariable:
+            outputValue = self.customizationWindow.getCallText(
+                str(self.firstInputValue),
+                str(self.secondInputValue),
+                str(self.thirdInputValue)
+            )
+        else:
+            outputValue = self.variableName
+       
+        
+        if self.matrixValue.strip() == '':
+            outputValue = ''
+
+        self.nodeOutputs = [outputValue]       
+         """
 
     def initInnerClasses(self):
         self.content = TestNumericalInputNodeContent(self)
@@ -631,5 +688,6 @@ class FunctionZeroSearchNode(NumericalNode):
 
     def onDoubleClicked(self, event):
         self.customizationWindow.openWindow()
-
+        self.declarationText = self.customizationWindow.declarationText
+        self.callText = self.customizationWindow.getCallText('a', 'b', 'c')
         self.markDescendantsDirty()

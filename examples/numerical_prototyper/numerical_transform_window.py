@@ -200,7 +200,7 @@ class TransformWindow(QWidget):
 
         return None
     def addToScript(self, text):
-        self.script += " " + text
+        self.script += text
 
     def addNewLineToScript(self):
         self.script += "\n"
