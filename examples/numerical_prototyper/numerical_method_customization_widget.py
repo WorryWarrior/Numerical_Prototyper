@@ -11,6 +11,8 @@ class NumericalMethodCustomizationWidget(QtWidgets.QTabWidget):
     def initUI(self):
         self.addTab(self.createLogicTab(), "Logic")
         self.addTab(self.createVariableTab(), "Variable")
+        self.addTab(self.createDebugTab(), "Debug")
+        self.addTab(self.createVisualizationTab(), "Visualization")
 
         self.setTabPosition(QtWidgets.QTabWidget.East)
         self.setFixedWidth(150)
@@ -31,10 +33,30 @@ class NumericalMethodCustomizationWidget(QtWidgets.QTabWidget):
         scrollWidget, add = self.generateScrollWidget('Logic')
 
         from numerical_prototyper.numerical_node_customization_window_element \
-            import VariableElement, LogElement
+            import VariableElement, MethodElement
 
         add(VariableElement)
+        add(MethodElement)
+
+        return scrollWidget
+
+    def createDebugTab(self):
+        scrollWidget, add = self.generateScrollWidget('Debug')
+
+        from numerical_prototyper.numerical_node_customization_window_element \
+            import LogElement
+
         add(LogElement)
+
+        return scrollWidget
+
+    def createVisualizationTab(self):
+        scrollWidget, add = self.generateScrollWidget('Visualization')
+
+        from numerical_prototyper.numerical_node_customization_window_element \
+            import PlotElement
+
+        add(PlotElement)
 
         return scrollWidget
 
@@ -131,6 +153,7 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
             NumericalCustomizationWindowElementBase, WhileElement, ForElement
 
         self.commands = {}
+        self.extraDeclarations = {}
 
         for elementClass in NumericalCustomizationWindowElementBase.__subclasses__():
             self.commands[elementClass.__name__] = elementClass
@@ -276,7 +299,6 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
         except AttributeError:
             self.itemWidget(self.selectedItems()[0])
 
-
     def getCommand(self, listWidgetItem):
         if self.itemWidget(listWidgetItem):
             return self.commands[self.itemWidget(listWidgetItem)]
@@ -295,12 +317,13 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
 
     def changePreviewText(self):
         from numerical_prototyper.numerical_node_customization_window_element \
-            import OpenBlockElement, CloseBlockElement, CloseBlockSilentlyElement
+            import OpenBlockElement, CloseBlockElement, CloseBlockSilentlyElement, MethodElement
 
         zeroAndAbove = (lambda i: (i < 0) * 0 + (i >= 0) * i)
 
+        self.extraDeclarations.clear()
         self.previewTextWindow.clear()
-        self.previewTextWindow.setDefaultText()
+        self.previewTextWindow.setDeclarationText()
         test = ''
         indentIncreaseElements = [OpenBlockElement]
         indentDecreaseElements = [CloseBlockElement, CloseBlockSilentlyElement]
@@ -320,12 +343,21 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
             if commandType in indentDecreaseElements:
                 indentLevel -= 1
 
+            if commandType is MethodElement:
+                if command.getParameterValue('-ListAssignedMethodDeclaration'):
+                    self.extraDeclarations[command.getParameterValue('-AssignedMethodName')] = \
+                        command.getParameterValue('-AssignedMethodContent')
+
             lineText = f'{self.getTextIndent(indentLevel)}{command.textValue}'
 
             if lineText.strip() != '':
                 test += f'{lineText}\n'
 
         test += 'end'
+        test += '\n\n'
+        for extraDeclaration in self.extraDeclarations:
+            test += self.extraDeclarations[extraDeclaration]
+
         self.previewTextWindow.append(test)
 
     def getTextIndent(self, indentCount):
@@ -382,7 +414,6 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
 
         self.refreshIndents()
 
-
     def getSaveData(self):
         commandList = []
         commandsOrdered = [self.getCommand(self.item(index)) for index in range(self.count())]
@@ -391,6 +422,12 @@ class NumericalMethodCustomizationCommandList(QtWidgets.QListWidget):
             commandList.append(command.getSaveData())
 
         return commandList
+
+    def getSaveTextData(self):
+        methodBlockData = {'name': self.previewTextWindow.methodNameEdit.text(),
+                           'content': self.previewTextWindow.toPlainText()
+                           }
+        return methodBlockData
 
 
 class NumericalMethodCustomizationCommandListElement(QtWidgets.QWidget):
@@ -422,7 +459,7 @@ class NumericalMethodCustomizationCommandListElement(QtWidgets.QWidget):
         midLayout = QtWidgets.QVBoxLayout()
         midLayout.setSpacing(1)
         midLayout.addWidget(self.title)
-        #midLayout.addWidget(self.description)
+        # midLayout.addWidget(self.description)
 
         mainHLayout = QtWidgets.QHBoxLayout()
         # mainHLayout.addWidget(self.icon)
@@ -466,7 +503,7 @@ class NumericalMethodCustomizationPreviewWidget(QtWidgets.QTextEdit):
         self.inputIndices = {}
         self.outputIndices = {}
 
-    def setDefaultText(self):
+    def setDeclarationText(self):
         self.resetTypeNameIndexDictionaries()
 
         defaultText = 'function['
@@ -487,6 +524,7 @@ class NumericalMethodCustomizationPreviewWidget(QtWidgets.QTextEdit):
 
         defaultText += ')'
         super().append(defaultText)
+
 
     def getTypeName(self, typeIndex):
         if typeIndex == 0:

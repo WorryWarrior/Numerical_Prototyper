@@ -7,7 +7,8 @@ from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
 
-from numerical_conf import NUMERIC_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
+from numerical_conf import NUMERIC_NODES, get_class_from_opcode, LISTBOX_MIMETYPE, LISTBOX_MIMETYPE_ALT
+from numerical_prototyper.numerical_configurable_node_window import NumericalConfigurableNodeWindow
 
 
 class NumericalSubWindow(NodeEditorWidget):
@@ -34,7 +35,7 @@ class NumericalSubWindow(NodeEditorWidget):
 
     def onDragEnter(self, event):
 
-        if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
+        if event.mimeData().hasFormat(LISTBOX_MIMETYPE) or event.mimeData().hasFormat(LISTBOX_MIMETYPE_ALT):
             event.acceptProposedAction()
         else:
             # print(" ... denied drag enter event")
@@ -53,6 +54,25 @@ class NumericalSubWindow(NodeEditorWidget):
             scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
 
             try:
+                node = get_class_from_opcode(op_code)(self.scene)
+                node.setPos(scene_position.x(), scene_position.y())
+                self.scene.history.storeHistory("Created node %s" % node.__class__.__name__)
+            except Exception as e:
+                dumpException(e)
+
+        if event.mimeData().hasFormat(LISTBOX_MIMETYPE_ALT):
+            eventData = event.mimeData().data(LISTBOX_MIMETYPE_ALT)
+            dataStream = QDataStream(eventData, QIODevice.ReadOnly)
+            pixmap = QPixmap()
+            dataStream >> pixmap
+            op_code = dataStream.readInt()
+
+            mouse_position = event.pos()
+            scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
+
+            try:
+                window = NumericalConfigurableNodeWindow()
+                window.openWindow()
                 node = get_class_from_opcode(op_code)(self.scene)
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory("Created node %s" % node.__class__.__name__)

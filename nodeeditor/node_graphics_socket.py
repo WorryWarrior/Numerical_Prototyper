@@ -3,13 +3,16 @@
 A module containing Graphics representation of a :class:`~nodeeditor.node_socket.Socket`
 """
 from qtpy.QtWidgets import QGraphicsItem
-from qtpy.QtGui import QColor, QBrush, QPen
+from qtpy.QtGui import QColor, QBrush, QPen, QFont
 from qtpy.QtCore import Qt, QRectF
 
 SOCKET_COLORS = [
     QColor("#FFFF7700"),
     QColor("#FF52e220"),
     QColor("#FF0056a6"),
+    QColor("#FFFF7700"), # Matrix size 2
+    QColor("#FFFF7700"), # Matrix size 3
+    QColor("#FFFF7700"), # Matrix size 4
     QColor("#FFa86db1"),
     QColor("#FFb54747"),
     QColor("#FFdbe220"),
@@ -36,7 +39,7 @@ class QDMGraphicsSocket(QGraphicsItem):
 
         self.isHighlighted = False
 
-        self.radius = 6
+        self.radius = 8
         self.outline_width = 1
         self.initAssets()
 
@@ -48,6 +51,9 @@ class QDMGraphicsSocket(QGraphicsItem):
         """Returns the ``QColor`` for this ``key``"""
         if type(key) == int: return SOCKET_COLORS[key]
         elif type(key) == str: return QColor(key)
+
+        self.socketIndex = key
+
         return Qt.transparent
 
     def changeSocketType(self):
@@ -76,6 +82,11 @@ class QDMGraphicsSocket(QGraphicsItem):
         painter.setBrush(self._brush)
         painter.setPen(self._pen if not self.isHighlighted else self._pen_highlight)
         painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
+
+        if self.socket_type in range(3, 6):
+            painter.setPen(QColor(0, 0, 0))
+            painter.setFont(QFont('Arial', 8))
+            painter.drawText(-3, 4, f'{self.socket_type - 1}')
 
     def boundingRect(self) -> QRectF:
         """Defining Qt' bounding rectangle"""

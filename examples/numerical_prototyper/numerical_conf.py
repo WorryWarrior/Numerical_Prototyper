@@ -1,23 +1,26 @@
 from PyQt5.QtGui import QFont
 
-
 from numerical_prototyper.nodes.numerical_input_nodes import TestNumericalInputNodeContent
-from numerical_prototyper.nodes.numerical_node_base import NumericalNode, NumericalGraphicsNode
+from numerical_prototyper.nodes.numerical_node_base import NumericalNode, NumericalGraphicsNode, OutputGraphicsNode
 from numerical_prototyper.numerical_node_content import EvaluateFunctionContent
 from numerical_prototyper.numerical_node_customization_window_base import NumberInputNodeCustomizationWindow, \
     FunctionInputNodeCustomizationWindow, EvaluateFunctionNodeCustomizationWindow, MatrixInputNodeCustomizationWindow, \
     FunctionZeroSearchNodeCustomizationWindow
 
 LISTBOX_MIMETYPE = "application/x-item"
+LISTBOX_MIMETYPE_ALT = "application/x-item-alt"
 
 NUM_NODE_INPUT_NUMBER = 1
 NUM_NODE_INPUT_FUNCTION = 2
 NUM_NODE_INPUT_MATRIX = 3
-NUM_NODE_EVALUATE_FUNCTION = 4
-NUM_NODE_TRANSPOSE = 5
-NUM_NODE_CONDITION_NUMBER = 6
-NUM_NODE_ZERO_SEARCH = 7
-NUM_NODE_ADD = 8
+NUM_NODE_INPUT_BOOL = 4
+NUM_NODE_INPUT_COMPLEX = 5
+
+NUM_NODE_EVALUATE_FUNCTION = 6
+NUM_NODE_TRANSPOSE = 7
+NUM_NODE_CONDITION_NUMBER = 8
+NUM_NODE_CONFIGURABLE = 9
+NUM_NODE_ADD = 10
 
 """
 NUM_NONE_SUBTRACT = 6
@@ -139,11 +142,11 @@ class EvaluateFunctionNode(NumericalNode):
         """or self.getInput(1) is None:"""
         if self.getInput(0) is None:
             self.functionName = None
-            #self.argumentName = None
+            # self.argumentName = None
             return
 
         self.functionName = self.getInput(0).nodeOutputs[0]
-        #self.argumentName = self.getInput(1).nodeOutputs[0]
+        # self.argumentName = self.getInput(1).nodeOutputs[0]
 
         if self.variableName == '' or not self.useVariable:
             outputValue = f'{str(self.functionName)}({self.argumentName})'
@@ -606,8 +609,43 @@ class MatrixInputNode(NumericalNode):
         if len(self.matrixValues) <= 0:
             self.nodeOutputs = ['']
 
+        labelValue = self.getMatrixRepresentation()
+        labelValue = " " + labelValue[1:-1]
+        labelValue = labelValue.replace(";", "\n")
+        self.content.valueLabel.setText(labelValue)
+        self.content.valueLabel.setFont(QFont('Arial', 8))
+        self.content.valueLabel.adjustSize()
+
         # self.nodeOutputs = [self.getScriptRepresentation()]
         self.markDescendantsDirty()
+
+
+@register_numeric_node(NUM_NODE_INPUT_BOOL)
+class BoolInputNode(NumericalNode):
+    op_code = NUM_NODE_INPUT_BOOL
+    op_title = "Bool Input"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[], outputs=[6])
+        self.customizationWindow = NumberInputNodeCustomizationWindow()
+        self.inputValue = ''
+        self.inputVariableName = None
+        self.printVariable = False
+        self.nodeOutputs = [""]
+
+
+@register_numeric_node(NUM_NODE_INPUT_COMPLEX)
+class ComplexInputNode(NumericalNode):
+    op_code = NUM_NODE_INPUT_COMPLEX
+    op_title = "Complex Input"
+
+    def __init__(self, scene):
+        super().__init__(scene, inputs=[], outputs=[7])
+        self.customizationWindow = NumberInputNodeCustomizationWindow()
+        self.inputValue = ''
+        self.inputVariableName = None
+        self.printVariable = False
+        self.nodeOutputs = [""]
 
 
 @register_numeric_node(NUM_NODE_OUTPUT)
@@ -615,18 +653,25 @@ class OutputNode(NumericalNode):
     op_code = NUM_NODE_OUTPUT
     op_title = "Output"
 
+    GraphicsNode_class = OutputGraphicsNode
+
     def __init__(self, scene):
-        super().__init__(scene, inputs=[0, 1, 2], outputs=[])
+        super().__init__(scene, inputs=[0, 1, 2, 6, 7], outputs=[])
 
 
-@register_numeric_node(NUM_NODE_ZERO_SEARCH)
+@register_numeric_node(NUM_NODE_CONFIGURABLE)
 class FunctionZeroSearchNode(NumericalNode):
-    op_code = NUM_NODE_ZERO_SEARCH
-    op_title = "Bisection"
+    op_code = NUM_NODE_CONFIGURABLE
+    op_title = "Configurable Logic Node"
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[1, 1, 2], outputs=[1])
-        self.customizationWindow = FunctionZeroSearchNodeCustomizationWindow(inputs=[1, 1, 2], outputs=[1])
+        # inputs=[1, 1, 1, 2]
+        # inputs=[2]
+
+        super().__init__(scene, inputs=[1, 1, 1, 1, 2], outputs=[1])
+        self.customizationWindow = FunctionZeroSearchNodeCustomizationWindow(inputs=[1, 1, 1, 1, 2], outputs=[1])
+
+        self.inputValues = []
         self.firstInputValue = ''
         self.secondInputValue = ''
         self.thirdInputValue = ''
@@ -638,10 +683,13 @@ class FunctionZeroSearchNode(NumericalNode):
 
     def getScriptRepresentation(self):
         res = ""
+
         res += self.customizationWindow.getCallText(
-                str(self.firstInputValue),
-                str(self.secondInputValue),
-                str(self.thirdInputValue))
+            self.inputValues
+            #str(self.firstInputValue),
+            #str(self.secondInputValue),
+            #str(self.thirdInputValue)
+        )
 
         res += "\n\n"
         res += self.declarationText
@@ -654,16 +702,27 @@ class FunctionZeroSearchNode(NumericalNode):
         self.eval()
 
     def eval(self, index=0):
+        # for i in range(len(self.inputs)):
+        #     if self.getInput(i) is None:
+        #         return
 
-        if self.getInput(0) is None or self.getInput(1) is None or self.getInput(2) is None:
-            self.firstInputValue = None
-            self.secondInputValue = None
-            self.thirdInputValue = None
-            return
+        for inputIndex in range(len(self.inputs)):
+            if self.getInput(inputIndex) is None:
+                return
 
-        self.firstInputValue = self.getInput(0).nodeOutputs[0]
-        self.secondInputValue = self.getInput(1).nodeOutputs[0]
-        self.thirdInputValue = self.getInput(2).nodeOutputs[0]
+        # if self.getInput(0) is None or self.getInput(1) is None or self.getInput(2) is None:
+        #     self.firstInputValue = None
+        #     self.secondInputValue = None
+        #     self.thirdInputValue = None
+        #     return
+
+        self.inputValues = []
+        for inputIndex in range(len(self.inputs)):
+            self.inputValues.append(str(self.getInput(inputIndex).nodeOutputs[0]))
+
+            #self.firstInputValue = self.getInput(0).nodeOutputs[0]
+            #self.secondInputValue = self.getInput(1).nodeOutputs[0]
+            #self.thirdInputValue = self.getInput(2).nodeOutputs[0]
 
         """
         if self.variableName == '' or not self.useVariable:
@@ -684,10 +743,11 @@ class FunctionZeroSearchNode(NumericalNode):
 
     def initInnerClasses(self):
         self.content = TestNumericalInputNodeContent(self)
-        self.grNode = NumericalGraphicsNode(self)
+        self.grNode = OutputGraphicsNode(self)
 
     def onDoubleClicked(self, event):
         self.customizationWindow.openWindow()
         self.declarationText = self.customizationWindow.declarationText
-        self.callText = self.customizationWindow.getCallText('a', 'b', 'c')
+        self.callText = self.customizationWindow.getCallText(self.inputValues)
+        #self.callText = self.customizationWindow.getCallText('a', 'b', 'c')
         self.markDescendantsDirty()

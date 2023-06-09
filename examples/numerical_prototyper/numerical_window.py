@@ -3,7 +3,7 @@ import json
 from nodeeditor.utils import loadStylesheets
 
 import numerical_paths
-from numerical_transform_window import TransformWindow
+from numerical_transform_window import ConvertWindow
 from numerical_sub_window import NumericalSubWindow
 from qtpy import QtGui, QtCore
 from qtpy.QtCore import Qt
@@ -42,7 +42,7 @@ class NumericalWindow(NodeEditorWindow):
 
         self.createActions()
         self.createMenus()
-        self.createTransformButton()
+        self.createConvertButton()
 
         # self.showMaximized()
 
@@ -61,7 +61,7 @@ class NumericalWindow(NodeEditorWindow):
     def createActions(self):
         super().createActions()
 
-    def createTransformButton(self):
+    def createConvertButton(self):
         toolbar = self.addToolBar("MainToolbar")
         toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         transformAction = QAction(QtGui.QIcon(numerical_paths.run_app), 'Create Script', self)
@@ -69,6 +69,6 @@ class NumericalWindow(NodeEditorWindow):
         toolbar.addAction(transformAction)
 
     def createScript(self):
-        a = json.dumps(self.nodeEditorSubwindow.scene.serialize(), indent=4)
-        self.converter = TransformWindow(a)
+        jsonState = json.dumps(self.nodeEditorSubwindow.scene.serialize(), indent=4)
+        self.converter = ConvertWindow(jsonState)
         self.converter.show()

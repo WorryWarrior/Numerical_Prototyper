@@ -35,7 +35,8 @@ class NodeCustomizationWindowBase:
         dialogWindow.applyBtn.setMinimumWidth(90)
         cancelBtn.setMinimumWidth(90)
 
-        dialogWindow.applyBtn.clicked.connect(dialogWindow.accept)
+        # dialogWindow.applyBtn.clicked.connect(dialogWindow.accept)
+        dialogWindow.applyBtn.clicked.connect(lambda: self.onApplyButtonPressed(dialogWindow))
         cancelBtn.clicked.connect(dialogWindow.reject)
 
         dialogWindow.content = QtWidgets.QVBoxLayout()
@@ -80,6 +81,9 @@ class NodeCustomizationWindowBase:
 
     def dressWindow(self, dialogWindow):
         return dialogWindow
+
+    def onApplyButtonPressed(self, dialogWindow):
+        return dialogWindow.accept()
 
     def extractParameters(self, dialogWindow):
         pass
@@ -210,7 +214,7 @@ class FunctionInputNodeCustomizationWindow(NodeCustomizationWindowBase):
 
 
 class MatrixInputNodeCustomizationWindow(NodeCustomizationWindowBase):
-    title = "Number Input Node"
+    title = "Matrix Input Node"
 
     valueParameterKey = '-Value'
     variableNameParameterKey = '-VariableName'
@@ -412,7 +416,7 @@ class EvaluateFunctionNodeCustomizationWindow(NodeCustomizationWindowBase):
 
 
 class FunctionZeroSearchNodeCustomizationWindow(NodeCustomizationWindowBase):
-    title = "Customizable Method Constructor"
+    title = "Configurable Logic Node"
 
     functionNameKey = "-FunctionName"
     stateKey = "-State"
@@ -469,8 +473,13 @@ class FunctionZeroSearchNodeCustomizationWindow(NodeCustomizationWindowBase):
                                        triggered=lambda: self.loadListWidget(dialogWindow.commandListWidget))
         saveAction = QtWidgets.QAction('&Save', fileMenu,
                                        triggered=lambda: self.saveListWidget(dialogWindow.commandListWidget))
+        saveAsBlockAction = QtWidgets.QAction('&Save as Block', fileMenu,
+                                              triggered=lambda: self.saveListWidgetAsBlock(
+                                                  dialogWindow.commandListWidget))
+
         fileMenu.addAction(loadAction)
         fileMenu.addAction(saveAction)
+        fileMenu.addAction(saveAsBlockAction)
         menuBar.show()
 
         return dialogWindow
@@ -492,7 +501,7 @@ class FunctionZeroSearchNodeCustomizationWindow(NodeCustomizationWindowBase):
 
         self.callText = res
 
-    def getCallText(self, *args):
+    def getCallText(self, args):
         res = self.callText
 
         for i in range(len(args)):
@@ -542,4 +551,16 @@ class FunctionZeroSearchNodeCustomizationWindow(NodeCustomizationWindowBase):
             return False
 
         saveData = listWidget.getSaveData()
+        json.dump(saveData, open(filename, 'w'), sort_keys=False, indent=3, separators=(',', ': '))
+
+    def saveListWidgetAsBlock(self, listWidget):
+        numerical_global.ensurePathExists(numerical_paths.saveDirectory)
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=listWidget,
+                                                            caption="Save method logic as block",
+                                                            filter="Method Logic (*.block)",
+                                                            directory=numerical_paths.saveDirectory)
+        if filename == "":
+            return False
+
+        saveData = listWidget.getSaveTextData()
         json.dump(saveData, open(filename, 'w'), sort_keys=False, indent=3, separators=(',', ': '))

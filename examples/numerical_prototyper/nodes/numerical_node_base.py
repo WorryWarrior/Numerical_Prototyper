@@ -1,6 +1,4 @@
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QLabel
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_node import Node
 from nodeeditor.node_graphics_node import QDMGraphicsNode
 from numerical_prototyper.numerical_node_content import NumericalContent
@@ -11,6 +9,20 @@ class NumericalGraphicsNode(QDMGraphicsNode):
         super().initSizes()
         self.width = 160
         self.height = 74
+        self.edge_roundness = 6
+        self.edge_padding = 0
+        self.title_horizontal_padding = 8
+        self.title_vertical_padding = 10
+
+    def initAssets(self):
+        super().initAssets()
+        self._title_font = QFont("Ubuntu", 8)
+
+class OutputGraphicsNode(QDMGraphicsNode):
+    def initSizes(self):
+        super().initSizes()
+        self.width = 160
+        self.height = 125
         self.edge_roundness = 6
         self.edge_padding = 0
         self.title_horizontal_padding = 8

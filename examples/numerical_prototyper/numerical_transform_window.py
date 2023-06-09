@@ -1,4 +1,5 @@
 import json
+import random
 
 from qtpy import QtCore
 
@@ -13,7 +14,7 @@ from numerical_prototyper.intermediate_representation.numerical_edge_ir import E
 from numerical_prototyper.intermediate_representation.numerical_node_ir import NodeIR
 
 
-class TransformWindow(QWidget):
+class ConvertWindow(QWidget):
 
     def __init__(self, data=None):
         super().__init__()
@@ -61,7 +62,7 @@ class TransformWindow(QWidget):
 
         test = []
         for treeNode in nodeTree.expand_tree(mode=nodeTree.ZIGZAG):
-            #print(self.getNodeByID(treeNode, nodeIRs).nodeName)
+            # print(self.getNodeByID(treeNode, nodeIRs).nodeName)
             test.append(treeNode)
             """
             nodeScriptRepresentation = self.getNodeByID(treeNode, nodeIRs).scriptRep
@@ -73,12 +74,12 @@ class TransformWindow(QWidget):
         test.reverse()
 
         for treeNodeTest in test:
-            nodeScriptRepresentation = self.getNodeByID(treeNodeTest, nodeIRs).scriptRep
+            if self.getNodeByID(treeNodeTest, nodeIRs) is not None:
+                nodeScriptRepresentation = self.getNodeByID(treeNodeTest, nodeIRs).scriptRep
 
             if nodeScriptRepresentation is not None:
                 self.addToScript(str(nodeScriptRepresentation))
                 self.addNewLineToScript()
-
 
         """
         for treeNode in nodeTree.expand_tree():
@@ -88,9 +89,9 @@ class TransformWindow(QWidget):
                 self.addToScript(str(nodeScriptRepresentation))
                 self.addNewLineToScript()
         """
-            #print(self.getNodeByID(test, nodeIRs).nodeName)
+        # print(self.getNodeByID(test, nodeIRs).nodeName)
 
-        #nodeTree.show()
+        # nodeTree.show()
 
         self.editor.appendPlainText(self.script)
 
@@ -106,18 +107,18 @@ class TransformWindow(QWidget):
                 outputIDs=self.getSocketIDs(node_data['outputs']),
                 scriptRep=node_data['script_rep']
             ))
-            #self.addToScript(str(node_data))
-            #self.addNewLineToScript()
-            #self.addNewLineToScript()
+            # self.addToScript(str(node_data))
+            # self.addNewLineToScript()
+            # self.addNewLineToScript()
 
         for edge_data in data['edges']:
             edgeIRs.append(EdgeIR(
                 startID=edge_data['start'],
                 endID=edge_data['end']
             ))
-            #self.addToScript(str(edge_data))
-            #self.addNewLineToScript()
-            #self.addNewLineToScript()
+            # self.addToScript(str(edge_data))
+            # self.addNewLineToScript()
+            # self.addNewLineToScript()
 
         return [nodeIRs, edgeIRs]
 
@@ -153,6 +154,8 @@ class TransformWindow(QWidget):
 
         while len(treeConnections) > 0 and emergencyCounter < 200:
             for treeConnection in treeConnections:
+                if treeConnection[1].nodeID in nodeTree.nodes:
+                    treeConnection[1].nodeID += random.randint(0, 10_000)
                 if self.isNodeRegisteredInTree(nodeTree, treeConnection[0].nodeID):
                     nodeTree.create_node(treeConnection[1].nodeName, treeConnection[1].nodeID,
                                          parent=treeConnection[0].nodeID)
@@ -164,10 +167,10 @@ class TransformWindow(QWidget):
         return [True, nodeTree]
 
     def isNodeRegisteredInTree(self, tree: Tree, nodeID: int) -> bool:
-        #print("Looking for node called " + nodeName)
+        # print("Looking for node called " + nodeName)
 
         for treeNode in tree.nodes:
-            #print(str(treeNode._get_identifier))
+            # print(str(treeNode._get_identifier))
             if treeNode == nodeID:
                 return True
 
@@ -199,6 +202,7 @@ class TransformWindow(QWidget):
                 return node
 
         return None
+
     def addToScript(self, text):
         self.script += text
 
